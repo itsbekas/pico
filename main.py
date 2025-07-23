@@ -41,11 +41,11 @@ def sub_callback(encoded_topic, encoded_msg):
     topic = encoded_topic.decode()
     msg = encoded_msg.decode()
     print(f"Received message on {topic}: {msg}")
-    if topic == "command/water":
+    if topic == "command/hedera-helix/water":
         water_plant()
-    elif topic == "command/read_moisture":
+    elif topic == "command/hedera-helix/read_moisture":
         log_moisture()
-    elif topic == "command/read_dht":
+    elif topic == "command/bedroom/read_dht":
         log_dht()
 
 
@@ -53,7 +53,7 @@ async def _water_plant():
     relay_pin.on()
     await asyncio.sleep(WATER_DURATION)
     relay_pin.off()
-    mqtt_client.publish("event/hedera-helix/watering", WATER_DURATION)
+    mqtt_client.publish("event/hedera-helix/watering", str(WATER_DURATION))
 
 # Sync wrapper for the async function
 def water_plant():
@@ -72,6 +72,9 @@ def setup_mqtt() -> mqtt.MQTTClient:
     mqtt_client.connect()
     mqtt_client.set_callback(sub_callback)
     mqtt_client.subscribe("command/hedera-helix/water")
+    mqtt_client.subscribe("command/hedera-helix/read_moisture")
+    mqtt_client.subscribe("command/bedroom/read_dht")
+    mqtt_client.publish("event/pico0/status", "online")
     return mqtt_client
 
 async def main():
