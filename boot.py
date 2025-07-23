@@ -4,23 +4,40 @@ from secrets import SSID, PASSWORD
 from machine import Pin
 import time
 
-status_led = Pin(0, Pin.OUT)
-status_led.off()
+BOOT = False
 
-def blink_led():
-    status_led.value(1)
-    time.sleep(0.5)
-    status_led.value(0)
-    time.sleep(0.5)
+def boot():
+    status_led = Pin(0, Pin.OUT)
+    status_led.off()
 
-wlan = network.WLAN(network.STA_IF)
-wlan.active(True)
-wlan.connect(SSID, PASSWORD)
+    def blink_led():
+        DELAY = 0.5
+        status_led.value(1)
+        time.sleep(DELAY)
+        status_led.value(0)
+        time.sleep(DELAY)
 
-while not wlan.isconnected():
-    blink_led()
+    wlan = network.WLAN(network.STA_IF)
+    wlan.config(pm = 0xa11140)
+    wlan.active(True)
+    wlan.connect(SSID, PASSWORD)
 
-status_led.on()
-print("Connected to WiFi:", wlan.ifconfig())
+    retries = 20
 
-webrepl.start()
+    while not wlan.isconnected() and retries > 0:
+        blink_led()
+        retries -= 1
+        print("Status:", wlan.status())
+
+    if not wlan.isconnected():
+        print("Failed to connect to WiFi")
+        status_led.value(0)
+        raise RuntimeError("Could not connect to WiFi")
+
+    status_led.on()
+    print("Connected to WiFi:", wlan.ifconfig())
+
+    webrepl.start()
+
+if BOOT:
+    boot()
